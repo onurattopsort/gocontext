@@ -151,20 +151,33 @@ This lets an LLM agent navigate a large codebase token-efficiently, only pulling
 
 ## Claude Code Integration
 
-Install the global Claude Code skill so `/gocontext` works in every project:
+### Automatic agent usage (recommended)
+
+Add the gocontext snippet to your project's `CLAUDE.md` so the agent uses it proactively without being asked:
+
+```bash
+# In your Go project root
+cat >> CLAUDE.md < <(curl -sL https://raw.githubusercontent.com/onurattopsort/gocontext/main/claude-md-snippet.md)
+```
+
+Or manually copy the contents of [`claude-md-snippet.md`](claude-md-snippet.md) into your project's `CLAUDE.md`.
+
+This tells Claude Code to prefer `gocontext` for structural queries (types, functions, references) and fall back to grep/read for text searches.
+
+### Slash command
+
+Optionally install the skill for explicit `/gocontext` invocation:
 
 ```bash
 mkdir -p ~/.claude/skills/gocontext
 cp .claude/skills/gocontext/SKILL.md ~/.claude/skills/gocontext/SKILL.md
 ```
 
-Then in any Go project with Claude Code:
+Then in any Go project:
 
 ```
 /gocontext overview .
 /gocontext package ./pkg/server
-/gocontext symbol ./pkg/server Config
-/gocontext body ./pkg/server Server.Start
 /gocontext refs . Config
 ```
 
