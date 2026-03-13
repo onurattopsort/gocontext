@@ -1,28 +1,37 @@
-## Go Codebase Exploration
+## Go Codebase Exploration with gocontext
 
-When working in this Go project, use the `gocontext` CLI for structural queries instead of grep or reading whole files. It is faster, more precise, and produces token-efficient output.
+This project has `gocontext` available — an AST-aware CLI for Go. Before using it, check it is installed by running `which gocontext`. If not found, fall back to Grep/Read and suggest: `go install github.com/onurattopsort/gocontext/cmd/gocontext@latest`
 
-Use it proactively — do not wait for the user to ask. Pick the right command for the task:
+### When to use gocontext
 
-- `gocontext overview .` — start here when orienting in an unfamiliar codebase. Returns every package with exported types and function signatures in one call.
-- `gocontext tree .` — list all packages with doc synopses.
-- `gocontext package <path>` — see all exported symbols and docs for a single package. Use instead of reading multiple files.
-- `gocontext symbol <path> <Name>` — get the exact source of a type, struct, interface, const, or var definition.
-- `gocontext body <path> <Func>` — get the full source of a function or method. Use `Type.Method` for methods.
-- `gocontext refs . <Name>` — find every usage of a symbol across the codebase with file:line and context.
+Use gocontext when you need **structural understanding** of Go code — it parses the AST, so it understands packages, exports, types, and function boundaries. It is the right tool when:
 
-Add `--json` when you need to parse the output programmatically.
+- You need to orient in an unfamiliar codebase → `gocontext overview .`
+- You need to know what a package exports without reading every file → `gocontext package <path>`
+- You need the exact definition of a type/struct/interface → `gocontext symbol <path> <Name>`
+- You need a complete function or method body with precise boundaries → `gocontext body <path> <Name>`
+- You need to find where a symbol is used across the codebase (AST-level, not text) → `gocontext refs . <Name>`
 
-### When to use gocontext vs built-in tools
+### When NOT to use gocontext
 
-| Task | Use |
-|---|---|
-| "What does this codebase do?" | `gocontext overview .` |
-| "What does package X export?" | `gocontext package X` |
-| "Show me the Config struct" | `gocontext symbol <path> Config` |
-| "Show me the handler function" | `gocontext body <path> Handler` |
-| "Where is Foo used?" | `gocontext refs . Foo` |
-| Searching for a string literal or log message | `Grep` (gocontext is for structural queries, not text search) |
-| Reading non-Go files | `Read` |
+Do NOT use gocontext for these — use the built-in tools instead:
 
-If `gocontext` is not installed, fall back to Grep/Read and suggest: `go install github.com/onurattopsort/gocontext/cmd/gocontext@latest`
+- **Searching for string literals, log messages, error strings, or config keys** → use `Grep`. gocontext only finds Go identifiers, not arbitrary text.
+- **Reading a specific file you already know the path to** → use `Read`. Don't round-trip through gocontext.
+- **Editing or writing code** → gocontext is read-only.
+- **Non-Go files** (YAML, JSON, Markdown, Dockerfiles, etc.) → use `Read`/`Grep`.
+- **You already know exactly which file and function to look at** → just `Read` the file. gocontext helps when you don't know where things are.
+- **Small packages with 1-2 files** → reading the file directly is about the same cost.
+
+### Commands reference
+
+All commands support `--json` for structured output.
+
+```
+gocontext overview .                    # full codebase snapshot — types + function signatures for every package
+gocontext tree .                        # list all packages with doc synopses
+gocontext package <path>                # exported symbols and docs for one package
+gocontext symbol <path> <Name>          # exact source of a type definition
+gocontext body <path> <Func>            # exact source of a function/method (use Type.Method for methods)
+gocontext refs . <Name>                 # all usages of a symbol with file:line, context, and kind
+```

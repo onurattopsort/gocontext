@@ -2,6 +2,28 @@
 
 AST extraction CLI for progressive disclosure of Go codebases. Built for LLM agents that need to efficiently navigate large Go projects without reading every file.
 
+## Why gocontext?
+
+LLM agents explore code using three approaches: LSP, grep, or file reads. Each has problems when an agent needs to quickly understand a codebase:
+
+**LSP is too chatty.** Language servers are built for IDEs — incremental, stateful, one-symbol-at-a-time. Getting "what does this package export?" requires starting a server, opening documents, and issuing dozens of hover/definition requests. An agent burns turns on protocol overhead instead of understanding code.
+
+**Grep is too dumb.** `grep "type.*struct"` finds struct definitions but also comments, string literals, and test fixtures. It can't distinguish exported from unexported, can't associate methods with their receiver types, and can't extract a clean function body without guessing where it ends.
+
+**Reading whole files wastes tokens.** An agent that `cat`s a 500-line file to find one function is spending context window on imports, comments, and unrelated code. In a large codebase, this adds up fast.
+
+**gocontext sits in the middle** — it understands Go structure (via `go/ast`) but returns results in one stateless call:
+
+| Task | grep | LSP | gocontext |
+|---|---|---|---|
+| List all packages with docs | Multiple finds + reads | N/A | `overview .` — one call |
+| What does a package export? | Read every file | Multiple requests + server | `package <path>` — one call |
+| Get a struct definition | Fragile regex | Definition request | `symbol <path> Name` — exact source |
+| Get a function body | Read file + guess boundaries | Definition + range | `body <path> Name` — exact bytes |
+| Find all usages of a symbol | `grep` (text matches, false positives) | References request (needs running server) | `refs . Name` — AST-level, classified |
+
+gocontext doesn't replace LSP — it handles the **exploration phase** (80% of an agent's work) where you need fast, broad, structural understanding. Use LSP when you need cross-package type resolution, refactoring, or diagnostics.
+
 ## Install
 
 ```bash
